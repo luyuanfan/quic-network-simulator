@@ -38,6 +38,29 @@ folder, each accompanied by all parameters needed.
 
 ---
 
+**important** all following operations should happen in the analysis folder for cleanliness. 
+
+we use python for data analysis, and we want a python env for the libraries. 
+
+to set up the env, go to the `analysis` folder and do: 
+```bash
+python3 -m venv analysis-env
+source analysis-env/bin/activate
+pip install -r requirements.txt
+```
+
+then we can run the main analyzer code by doing
+```bash
+python3 run.py
+```
+
+get in and out of the environemt by doing
+```bash
+source analysis-env/bin/activate  # get in 
+deactivate                        # get out
+```
+---
+
 This project builds a test framework that can be used for benchmarking and
 measuring the performance of QUIC implementations under various network
 conditions. It uses the [ns-3](https://www.nsnam.org/) network simulator for
