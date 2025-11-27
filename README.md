@@ -1,5 +1,12 @@
 # Network Simulator for QUIC benchmarking
 
+do
+```bash
+git clone git@github.com:luyuanfan/quic-network-simulator.git
+cd quic-network-simulator/quic-go-datacenter
+sudo docker compose up
+```
+
 This project builds a test framework that can be used for benchmarking and
 measuring the performance of QUIC implementations under various network
 conditions. It uses the [ns-3](https://www.nsnam.org/) network simulator for
