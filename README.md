@@ -1,11 +1,42 @@
 # Network Simulator for QUIC benchmarking
 
-do
+to set up do,
 ```bash
 git clone git@github.com:luyuanfan/quic-network-simulator.git
-cd quic-network-simulator/quic-go-datacenter
 sudo docker compose up
 ```
+
+this framework runs a real quic client and a real quic server inside two 
+separate docker containers. it forces the traffic to go through ns-3 which
+emulates our desired datacenter network conditions. 
+
+we have three containers:
+
+1. sim
+   - runs ns-3, listens on port 57832
+   - bridges client and server
+
+2. client
+   - run drr client library
+   - connected to leftnet
+
+3. server
+   - run drr server library
+   - connected to rightnet
+
+all parameters for the experiments is written in `.env` which is then used in the 
+docker compose file. 
+
+about `SERVER_PARAMS` and `CLIENT_PARAMS`, if nothing is defined it'll default to 
+the values in our quic-go source code. 
+
+about `SCENARIO`, it defines the network. more examples can be found in the `sim/scenarios`
+folder, each accompanied by all parameters needed.
+
+**important** if any source code is changed we can try to rebuild all the docker layers by doing 
+`sudo docker compose build --no-cache` just to make sure things are up to date. 
+
+---
 
 This project builds a test framework that can be used for benchmarking and
 measuring the performance of QUIC implementations under various network

@@ -18,7 +18,7 @@ if [ "$ROLE" = "server" ]; then
         $SERVER_PARAMS
 
 elif [ "$ROLE" = "client" ]; then
-    # Wait for the ns-3 sim container to be ready
+    # wait for the ns-3 sim container to be ready
     /wait-for-it.sh sim:57832 -s -t 30
 
     echo "[client] starting datacenter_client to server4:$PORT"
