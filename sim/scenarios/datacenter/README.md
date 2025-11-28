@@ -26,6 +26,12 @@ This scenario has the following configurable properties:
 * `--queue`: Queue size of the queue attached to the link. Specified in
   packets. This is a required parameter. For example `--queue=25`.
 
+* `--nLeaf`: Number of leaf switches in the topology. Optional parameter with
+  default value of 4. For example `--nLeaf=8`.
+
+* `--nSpine`: Number of spine switches in the topology. Optional parameter with
+  default value of 2. For example `--nSpine=4`.
+
 For example,
 ```bash
 ./run.sh "datacenter --delay=15ms --bandwidth=10Mbps --queue=25"
