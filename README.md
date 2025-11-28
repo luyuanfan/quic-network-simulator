@@ -61,6 +61,14 @@ deactivate                        # get out
 ```
 ---
 
+about the leaf-spine datacenter topology, i added a new scenario here `sim/scenarios/datacenter`.
+
+to use this, we need to stop using the `martenseemann/quic-network-simulator` sim image in the docker compose file. instead, we can build our own local sim image. i already changed the image name in the compose file, so doing a first-time compose up should do it. but if you have cached layers somewhere, you can build this local image by doing: 
+```bash
+sudo docker compose build sim
+```
+---
+
 This project builds a test framework that can be used for benchmarking and
 measuring the performance of QUIC implementations under various network
 conditions. It uses the [ns-3](https://www.nsnam.org/) network simulator for
