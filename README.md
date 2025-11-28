@@ -1,10 +1,39 @@
 # Network Simulator for QUIC benchmarking
 
-to set up do,
+## where things are
+This is the ns-3 experimental framework of our QUIC deficit round robin
+scheduler. 
+
+The source code of our scheduler is located in another repository:
+`https://github.com/Nianqing-Gao/quic-go_scheduler.git`. In there, we have 
+
+- `example/datacenter_client` and `example/datacenter_server` which are simple
+   implementations of a QUIC client and server (the client is programmed to
+   send 80% short streams and 20% long streams to the server, which would in turn
+   report the length of the streams and their flow completion time).
+- Implementation of the scheduler. 
+
+In this repository, we have these files:
+
+- `analysis/` where we have all of our data analysis scripts
+- `sim/datacenter/` which implements a simple leaf-spine network
+- `docker-compose.yml` which sets up three containers that runs the network,
+   the client, and the server code. 
+- `.env` which contains all configurations of the network, client, and server.
+   It is passed to the docker compose file that use these parameters to build 
+   the entire experiment. 
+
+---
+
+## set up
+
+To set up the experiment framework, do: 
 ```bash
 git clone git@github.com:luyuanfan/quic-network-simulator.git
 sudo docker compose up
 ```
+
+## what does the docker file do
 
 this framework runs a real quic client and a real quic server inside two 
 separate docker containers. it forces the traffic to go through ns-3 which
@@ -38,6 +67,7 @@ folder, each accompanied by all parameters needed.
 
 ---
 
+## data analysis 
 **important** all following operations should happen in the analysis folder for cleanliness. 
 
 we use python for data analysis, and we want a python env for the libraries. 
@@ -60,6 +90,8 @@ source analysis-env/bin/activate  # get in
 deactivate                        # get out
 ```
 ---
+
+## network topology
 
 about the leaf-spine datacenter topology, i added a new scenario here `sim/scenarios/datacenter`.
 
