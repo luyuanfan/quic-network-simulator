@@ -25,10 +25,10 @@ QUANTUMS = [
 ''' network configurations '''
 
 # stream attributes
-NFLOWS = 10000
+NFLOWS = 1000
 SLRATIO = 0.9
-SHORT_SIZE = 10000
-LONG_SIZE = 100000
+SHORT_SIZE = 100 * 1024 # 100KB 
+LONG_SIZE = 1 * 1024 * 1024 # 1MB
 # link delay (unit: ms)
 DELAYS = [
     "20"
@@ -36,7 +36,7 @@ DELAYS = [
 # link max bandwidth (unit: Mbps)
 BANDWIDTHS = [
     "10",
-    "50"
+    "50",
 ]
 # length of switch queue (unit: number of packet)
 QUEUE_LENGTHS = [
@@ -66,6 +66,13 @@ def run_one_experiment(scenario, delay, bw, qlen, scheduler, quantum=None):
         f"sc-{scenario}_d{delay}_bw{bw}_ql{qlen}_sch-{scheduler}{quantum_tag}"
     )
     logfile = f"{experiment_name}.csv"
+
+    log_dir = os.path.join("logs", "server")
+    os.makedirs(log_dir, exist_ok=True)
+    host_log_path = os.path.join(log_dir, logfile)
+    if os.path.exists(host_log_path):
+        os.remove(host_log_path)
+
 
     print(f"\n===== running experiment {experiment_name} =====\n")
 

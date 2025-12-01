@@ -35,6 +35,11 @@ sudo docker compose up
 
 ## what does the docker file do
 
+**important** because we need to pull from the source code repo,
+remember to always run a `sudo docker compose build --no-cache` after
+making some changes to the source code so that the docker container also
+has up to date info. 
+
 this framework runs a real quic client and a real quic server inside two 
 separate docker containers. it forces the traffic to go through ns-3 which
 emulates our desired datacenter network conditions. 
@@ -77,7 +82,7 @@ for datacenter:
 ```bash
 sudo python3 run_grid.py 2
 ```
-results are placed in  `./logs/sim`
+results are placed in  `./logs/sim/`
 
 ---
 
