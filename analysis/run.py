@@ -53,13 +53,13 @@ def parse_filename(path):
 ''' compute moments for a flow length group
     e.g., compute the mean, std, skew, kurt of short flows in xyz scenario
 '''
-def compute_moments(len_class, group):
+def compute_moments(class_name, group):
 
     x = group["sct_ms"].values.astype(float)
     n = len(x)
 
     if n == 0:
-        print(f"no data for class {len_class}")
+        print(f"no data for class {class_name}")
         return pd.Series({
             "count": None,
             "mean": None,
@@ -87,11 +87,15 @@ get stream completion time by class (stream length) for one scenario
 def print_sct_stats(df):
 
     rows = []
-    for len_class, group in df.groupby("class"):
-        s = compute_moments(len_class, group)
-        s["class"] = len_class
+    # get sct across all classes
+    s = compute_moments("full", df)
+    s["class"] = "full"
+    rows.append(s)
+    # get sct by class
+    for class_name, group in df.groupby("class"):
+        s = compute_moments(class_name, group)
+        s["class"] = class_name
         rows.append(s)
-
     results = pd.DataFrame(rows)
     print(results)
 
