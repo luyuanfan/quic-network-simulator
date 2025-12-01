@@ -3,6 +3,7 @@ import argparse
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.stats import skew as sp_skew, kurtosis as sp_kurtosis
 
 LOG_DIR = "../logs/server"
 OUT_SUMMARY = "./results/summary_by_class.csv"
@@ -40,7 +41,7 @@ def parse_filename(path):
             meta["queue_pkts"] = int(p[2:])          # "ql20" -> 20
         elif p.startswith("sch-"):
             meta["scheduler"] = p[4:]                # "sch-drr" -> "drr"
-        elif p.startswith("q"):                      # quantums: q7200-3600-1200
+        elif p.startswith("q"):                      # "q7200-3600-1200" -> 7200,3600,1200
             nums = p[1:].split("-")
             if len(nums) == 3:
                 meta["quantum0"] = int(nums[0])
@@ -48,6 +49,57 @@ def parse_filename(path):
                 meta["quantum2"] = int(nums[2])
 
     return meta
+
+''' compute moments for a flow length group
+    e.g., compute the mean, std, skew, kurt of short flows in xyz scenario
+'''
+def compute_moments(len_class, group):
+
+    x = group["sct_ms"].values.astype(float)
+    n = len(x)
+
+    if n == 0:
+        print(f"no data for class {len_class}")
+        return pd.Series({
+            "count": None,
+            "mean": None,
+            "std": None,
+            "skew": None,
+            "kurtosis": None,
+        })
+
+    mean = np.mean(x)
+    std = np.std(x, ddof=1)
+    sk = sp_skew(x, bias=False)
+    kt = sp_kurtosis(x, bias=False)
+
+    return pd.Series({
+        "count": n,
+        "mean": mean,
+        "std": std,
+        "skew": sk,
+        "kurtosis": kt,
+    })
+
+'''
+get stream completion time by class (stream length) for one scenario
+'''
+def print_sct_stats(df):
+
+    rows = []
+    for len_class, group in df.groupby("class"):
+        s = compute_moments(len_class, group)
+        s["class"] = len_class
+        rows.append(s)
+
+    results = pd.DataFrame(rows)
+    print(results)
+
+'''
+get best quantum among scenarios
+'''
+def get_best_params(path):
+    pass
 
 def print_info():
     pass
@@ -59,16 +111,20 @@ def main():
     for fname in os.listdir(LOG_DIR):
         if fname.endswith(".csv"):
             files.append(os.path.join(LOG_DIR, fname))
-    files.sort()
 
     if not files:
         print(f"warning: no CSV files found in {LOG_DIR}")
         return
+
+    files.sort()
     
-    # read csv files
+    # process each csv file
     for f in files:
-        print(f"reading file {path}")
-        meta = parse_filename(path)
+        print(f"reading file {f}")
+        meta = parse_filename(f)
+        df = pd.read_csv(f, sep=',')
+        print_sct_stats(df)
+    
 
 
 if __name__ == "__main__":
