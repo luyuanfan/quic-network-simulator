@@ -8,6 +8,25 @@ from scipy.stats import skew as sp_skew, kurtosis as sp_kurtosis
 LOG_DIR = "../logs/server"
 OUT_SUMMARY = "./results/summary_by_class.csv"
 
+# TODO: maybe compute what quantum gives the lowest sct for short
+# streams across all possible scenarios?
+
+# TODO: not sure if we care about sct for long streams? 
+
+# TODO: maybe we can plot the sct as a distribution and see if they
+# shapes funny (long tail types of situations)
+
+# TODO: CDF of stream completion time (per class, per scenario)
+
+# TODO: Boxplot / violin plot by class and scheduler
+
+# TODO: for each quantum combo, get sct across different scenarios
+
+# TODO: maybe we care about 99 percentile of short flow sct or something like that
+#   since if we have a long tail maybe some are dragging the mean down
+
+# maybe an overall score: score= w1​⋅mean_short ​+ w2​⋅p99_short ​+ w3​⋅skew_short
+
 def parse_filename(path):
     '''
     example filename: sc-simple-p2p_d20_bw10_ql20_sch-drr_q7200-3600-1200.csv
@@ -100,12 +119,14 @@ def print_sct_stats(df):
     print(results)
 
 '''
-get best quantum among scenarios
+get best quantum for eahc scenario
 '''
-def get_best_params(path):
+def get_best_quantum(path):
     pass
-
-def print_info():
+'''
+for plotting
+'''
+def plot_sct(df):
     pass
 
 def main():
@@ -129,7 +150,5 @@ def main():
         df = pd.read_csv(f, sep=',')
         print_sct_stats(df)
     
-
-
 if __name__ == "__main__":
     main()
