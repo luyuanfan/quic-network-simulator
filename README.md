@@ -1,5 +1,24 @@
 # Network Simulator for QUIC benchmarking
 
+**tl;dr:**
+
+to run the experiments:
+```bash
+# optionally do the following to update quic-go source code
+sudo docker compose build --no-cache
+# then run
+sudo python3 run_grid.py
+```
+
+to do data analysis, go to `./analysis/` and
+```bash
+source analysis-env/bin/activate
+pip install -r requirements.txt
+python3 run.py
+```
+
+---
+
 ## where things are
 This is the ns-3 experimental framework of our QUIC deficit round robin
 scheduler. 
