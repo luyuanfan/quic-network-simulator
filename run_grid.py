@@ -8,7 +8,6 @@ CLIENT_IMAGE = "quic-go-datacenter"
 SERVER_IMAGE = "quic-go-datacenter"
 
 ''' scheduler configurations '''
-
 # scheduler modules
 SCHEDULERS = [
     "drr",
@@ -19,13 +18,12 @@ SCHEDULERS = [
 # drr quantums
 QUANTUMS = [
     (6 * 1200, 3 * 1200, 1 * 1200),
-    (10 * 1200, 5 * 1200, 2 * 1200)
+    (3 * 1200, 2 * 1200, 1 * 1200)
 ]
 
 ''' network configurations '''
-
 # stream attributes
-NFLOWS = 1000
+NFLOWS = 500
 SLRATIO = 0.9
 SHORT_SIZE = 100 * 1024 # 100KB 
 LONG_SIZE = 1 * 1024 * 1024 # 1MB
@@ -35,14 +33,12 @@ DELAYS = [
 ]
 # link max bandwidth (unit: Mbps)
 BANDWIDTHS = [
-    "10",
-    "50",
+    "8"
 ]
 # length of switch queue (unit: number of packet)
 QUEUE_LENGTHS = [
     "20",
-    "50",
-    "100"
+    "50"
 ]
 
 ''' run one docker compose experiment '''
@@ -110,6 +106,16 @@ def run_one_experiment(scenario, delay, bw, qlen, scheduler, quantum=None):
     env["CLIENT_PARAMS"] = ns3_client_params
 
     subprocess.run(["docker-compose", "down", "-v"], check=False, env=env)
+
+    # subprocess.run(
+    #     ["docker-compose", "build", "--no-cache", "client"],
+    #     env=env,
+    # )
+
+    # subprocess.run(
+    #     ["docker-compose", "build", "--no-cache", "server"],
+    #     env=env,
+    # )
 
     subprocess.run(
         ["docker-compose", "up", "--abort-on-container-exit"],
