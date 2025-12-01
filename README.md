@@ -67,7 +67,22 @@ folder, each accompanied by all parameters needed.
 
 ---
 
+## generating data
+
+for simple bottleneck:
+```bash
+sudo python3 run_grid.py 1
+```
+for datacenter:
+```bash
+sudo python3 run_grid.py 2
+```
+results are placed in  `./logs/sim`
+
+---
+
 ## data analysis 
+
 **important** all following operations should happen in the analysis folder for cleanliness. 
 
 we use python for data analysis, and we want a python env for the libraries. 
