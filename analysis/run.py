@@ -3,7 +3,7 @@ import argparse
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.stats import skew as sp_skew, kurtosis as sp_kurtosis
+from scipy.stats import skew as sp_skew, kurtosis as sp_kurtosis, gaussian_kde
 
 LOG_DIR = "../csv"
 OUT_SUMMARY = "./results/summary_by_class.csv"
@@ -243,6 +243,100 @@ def plot_throughput_boxplot(df, meta):
     print(f"  Saved plot to {output_path}")
     plt.close()
 
+def plot_throughput_ridgeline(df, meta):
+    """
+    Create ridgeline plot of throughput distributions by class
+    Removes outliers using IQR method
+    """
+    # Calculate throughput for each flow
+    bytes_vals = df["bytes"].values.astype(float)
+    sct_vals = df["sct_ms"].values.astype(float)
+    valid_mask = sct_vals > 0
+    
+    df_plot = df[valid_mask].copy()
+    df_plot["throughput"] = df_plot["bytes"].astype(float) / df_plot["sct_ms"].astype(float)
+    
+    # Get unique classes
+    classes = sorted(df_plot["class"].unique())
+    
+    # Collect filtered data for each class
+    data_by_class = {}
+    for class_name in classes:
+        class_data = df_plot[df_plot["class"] == class_name]["throughput"]
+        
+        # Remove outliers using IQR method
+        Q1 = class_data.quantile(0.25)
+        Q3 = class_data.quantile(0.75)
+        IQR = Q3 - Q1
+        lower_bound = Q1 - 1.5 * IQR
+        upper_bound = Q3 + 1.5 * IQR
+        
+        # Filter out outliers
+        filtered_data = class_data[(class_data >= lower_bound) & (class_data <= upper_bound)]
+        data_by_class[class_name] = filtered_data.values
+    
+    # Create figure
+    fig, axes = plt.subplots(len(classes), 1, figsize=(12, 2.5 * len(classes)), sharex=True)
+    if len(classes) == 1:
+        axes = [axes]
+    
+    # Color map for classes
+    colors = {'short': '#FF6B6B', 'medium': '#4ECDC4', 'long': '#45B7D1'}
+    
+    # Plot each class as a density plot
+    for idx, class_name in enumerate(classes):
+        ax = axes[idx]
+        data = data_by_class[class_name]
+        
+        if len(data) > 0:
+            # Create histogram/density
+            color = colors.get(class_name, '#95A5A6')
+            ax.hist(data, bins=50, density=True, alpha=0.7, color=color, edgecolor='black', linewidth=0.5)
+            
+            # Add KDE (kernel density estimation) overlay
+            from scipy import stats
+            kde = stats.gaussian_kde(data)
+            x_range = np.linspace(data.min(), data.max(), 200)
+            ax.plot(x_range, kde(x_range), color='darkred', linewidth=2, alpha=0.8)
+            
+            # Fill under the curve
+            ax.fill_between(x_range, kde(x_range), alpha=0.3, color=color)
+        
+        # Styling
+        ax.set_ylabel(class_name, fontsize=11, rotation=0, ha='right', va='center')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+        ax.set_yticks([])
+        ax.grid(True, alpha=0.3, axis='x')
+        
+        # Only show x-axis label on bottom plot
+        if idx < len(classes) - 1:
+            ax.spines['bottom'].set_visible(False)
+            ax.tick_params(bottom=False)
+    
+    # Labels and title
+    title_parts = []
+    if meta["scenario"]:
+        title_parts.append(f"Scenario: {meta['scenario']}")
+    if meta["scheduler"]:
+        title_parts.append(f"Scheduler: {meta['scheduler']}")
+    if meta["quantum0"] is not None:
+        title_parts.append(f"Quantum: {meta['quantum0']}-{meta['quantum1']}-{meta['quantum2']}")
+    title_parts.append("(Throughput Distribution by Class)")
+    
+    fig.suptitle("\n".join(title_parts), fontsize=12, y=0.98)
+    axes[-1].set_xlabel("Throughput (bytes/ms)", fontsize=11)
+    
+    plt.tight_layout()
+    
+    # Save figure
+    os.makedirs("./results/plots", exist_ok=True)
+    output_path = f"./results/plots/{meta['file']}_ridgeline.png"
+    plt.savefig(output_path, dpi=150, bbox_inches='tight')
+    print(f"  Saved ridgeline plot to {output_path}")
+    plt.close()
+
 def plot_throughput_timeseries(df, meta):
     """
     Create time series plot of throughput over time for each class
@@ -308,6 +402,111 @@ def plot_throughput_timeseries(df, meta):
     print(f"  Saved time series plot to {output_path}")
     plt.close()
 
+def plot_throughput_ridgeline(df, meta):
+    """
+    Create ridgeline plot showing throughput distributions for each class
+    Removes outliers using IQR method
+    """
+    # Calculate throughput for each flow
+    bytes_vals = df["bytes"].values.astype(float)
+    sct_vals = df["sct_ms"].values.astype(float)
+    valid_mask = sct_vals > 0
+    
+    df_plot = df[valid_mask].copy()
+    df_plot["throughput"] = df_plot["bytes"].astype(float) / df_plot["sct_ms"].astype(float)
+    
+    # Get unique classes
+    classes = sorted(df_plot["class"].unique())
+    colors = {'short': '#FF6B6B', 'medium': '#4ECDC4', 'long': '#45B7D1'}
+    
+    # Prepare data for each class (with outliers removed)
+    class_data_dict = {}
+    for class_name in classes:
+        class_data = df_plot[df_plot["class"] == class_name]["throughput"].values
+        
+        # Remove outliers using IQR method
+        Q1 = np.percentile(class_data, 25)
+        Q3 = np.percentile(class_data, 75)
+        IQR = Q3 - Q1
+        lower_bound = Q1 - 1.5 * IQR
+        upper_bound = Q3 + 1.5 * IQR
+        
+        # Filter out outliers
+        class_data_filtered = class_data[
+            (class_data >= lower_bound) & 
+            (class_data <= upper_bound)
+        ]
+        
+        if len(class_data_filtered) > 1:  # Need at least 2 points for KDE
+            class_data_dict[class_name] = class_data_filtered
+    
+    if not class_data_dict:
+        print(f"  Not enough data for ridgeline plot")
+        return
+    
+    # Create figure
+    fig, axes = plt.subplots(len(class_data_dict), 1, figsize=(12, 2 * len(class_data_dict)), 
+                             sharex=True)
+    
+    # Handle single class case
+    if len(class_data_dict) == 1:
+        axes = [axes]
+    
+    # Find global x range for consistent scaling
+    all_data = np.concatenate(list(class_data_dict.values()))
+    x_min, x_max = all_data.min(), all_data.max()
+    x_range = np.linspace(x_min, x_max, 1000)
+    
+    # Plot each class
+    for idx, (class_name, class_data) in enumerate(class_data_dict.items()):
+        ax = axes[idx]
+        
+        # Create KDE
+        kde = gaussian_kde(class_data)
+        density = kde(x_range)
+        
+        # Fill the density curve
+        color = colors.get(class_name, '#95A5A6')
+        ax.fill_between(x_range, density, alpha=0.7, color=color)
+        ax.plot(x_range, density, color=color, linewidth=2)
+        
+        # Styling
+        ax.set_ylabel(class_name, fontsize=11, rotation=0, ha='right', va='center')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+        ax.set_yticks([])
+        ax.grid(True, alpha=0.3, axis='x')
+        
+        # Only show x-axis label on bottom plot
+        if idx < len(class_data_dict) - 1:
+            ax.spines['bottom'].set_visible(False)
+            ax.set_xticks([])
+    
+    # Set xlabel only on bottom plot
+    axes[-1].set_xlabel("Throughput (bytes/ms)", fontsize=11)
+    
+    # Add title
+    title_parts = []
+    if meta["scenario"]:
+        title_parts.append(f"Scenario: {meta['scenario']}")
+    if meta["scheduler"]:
+        title_parts.append(f"Scheduler: {meta['scheduler']}")
+    if meta["quantum0"] is not None:
+        title_parts.append(f"Quantum: {meta['quantum0']}-{meta['quantum1']}-{meta['quantum2']}")
+    title_parts.append("Throughput Distribution by Class")
+    
+    fig.suptitle("\n".join(title_parts), fontsize=12, y=0.98)
+    
+    plt.tight_layout()
+    
+    # Save figure
+    os.makedirs("./results/plots", exist_ok=True)
+    output_path = f"./results/plots/{meta['file']}_ridgeline.png"
+    plt.savefig(output_path, dpi=150, bbox_inches='tight')
+    print(f"  Saved ridgeline plot to {output_path}")
+    plt.close()
+
 def main():
 
     # get csv files
@@ -329,6 +528,7 @@ def main():
         df = pd.read_csv(f, sep=',')
         print_sct_stats(df)
         plot_throughput_boxplot(df, meta)
+        plot_throughput_ridgeline(df, meta)
         plot_throughput_timeseries(df, meta)
     
 if __name__ == "__main__":
