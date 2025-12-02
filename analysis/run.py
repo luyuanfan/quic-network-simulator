@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import skew as sp_skew, kurtosis as sp_kurtosis
 
-LOG_DIR = "../logs/server"
+LOG_DIR = "../csv"
 OUT_SUMMARY = "./results/summary_by_class.csv"
 
 # TODO: maybe compute what quantum gives the lowest sct for short
@@ -25,7 +25,7 @@ OUT_SUMMARY = "./results/summary_by_class.csv"
 # TODO: maybe we care about 99 percentile of short flow sct or something like that
 #   since if we have a long tail maybe some are dragging the mean down
 
-# maybe an overall score: score= w1​⋅mean_short ​+ w2​⋅p99_short ​+ w3​⋅skew_short
+# maybe an overall score: score= w1â€‹â‹…mean_short â€‹+ w2â€‹â‹…p99_short â€‹+ w3â€‹â‹…skew_short
 
 def parse_filename(path):
     '''
@@ -73,9 +73,13 @@ def parse_filename(path):
     e.g., compute the mean, std, skew, kurt of short flows in xyz scenario
 '''
 def compute_moments(class_name, group):
-
-    x = group["sct_ms"].values.astype(float)
-    n = len(x)
+    bytes_vals = group["bytes"].values.astype(float)
+    sct_vals = group["sct_ms"].values.astype(float)
+    valid_mask = sct_vals > 0
+    bytes_vals = bytes_vals[valid_mask]
+    sct_vals = sct_vals[valid_mask]
+    throughput = bytes_vals / sct_vals
+    n = len(throughput)
 
     if n == 0:
         print(f"no data for class {class_name}")
@@ -87,10 +91,10 @@ def compute_moments(class_name, group):
             "kurtosis": None,
         })
 
-    mean = np.mean(x)
-    std = np.std(x, ddof=1)
-    sk = sp_skew(x, bias=False)
-    kt = sp_kurtosis(x, bias=False)
+    mean = np.mean(throughput)
+    std = np.std(throughput, ddof=1)
+    sk = sp_skew(throughput, bias=False)
+    kt = sp_kurtosis(throughput, bias=False)
 
     return pd.Series({
         "count": n,
@@ -123,11 +127,186 @@ get best quantum for eahc scenario
 '''
 def get_best_quantum(path):
     pass
+
+'''
+for plotting time series of throughput for short flows
+'''
+def plot_throughput_timeseries(df, meta):
+    """
+    Create time series plot of throughput for short flows only
+    """
+    # Filter for short flows only
+    df_short = df[df["class"] == "short"].copy()
+    
+    if len(df_short) == 0:
+        print(f"  No short flows found for time series plot")
+        return
+    
+    # Calculate throughput
+    df_short["throughput"] = df_short["bytes"].astype(float) / df_short["sct_ms"].astype(float)
+    
+    # Filter valid data
+    valid_mask = df_short["sct_ms"] > 0
+    df_short = df_short[valid_mask]
+    
+    # Sort by time
+    df_short = df_short.sort_values("time_ms")
+    
+    # Create figure
+    fig, ax = plt.subplots(figsize=(12, 6))
+    
+    # Plot throughput over time
+    ax.scatter(df_short["time_ms"], df_short["throughput"], alpha=0.5, s=20, color='steelblue')
+    
+    # Add moving average for trend line
+    window_size = max(10, len(df_short) // 50)  # Adaptive window size
+    if len(df_short) >= window_size:
+        df_short['throughput_ma'] = df_short['throughput'].rolling(window=window_size, center=True).mean()
+        ax.plot(df_short["time_ms"], df_short["throughput_ma"], color='red', linewidth=2, label=f'Moving Avg (n={window_size})')
+        ax.legend()
+    
+    # Labels and title
+    title_parts = []
+    if meta["scenario"]:
+        title_parts.append(f"Scenario: {meta['scenario']}")
+    if meta["scheduler"]:
+        title_parts.append(f"Scheduler: {meta['scheduler']}")
+    if meta["quantum0"] is not None:
+        title_parts.append(f"Quantum: {meta['quantum0']}-{meta['quantum1']}-{meta['quantum2']}")
+    title_parts.append("(Short Flows Only)")
+    
+    ax.set_title("\n".join(title_parts), fontsize=12)
+    ax.set_xlabel("Time (ms)", fontsize=11)
+    ax.set_ylabel("Throughput (bytes/ms)", fontsize=11)
+    ax.grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    
+    # Save figure
+    os.makedirs("./results/plots", exist_ok=True)
+    output_path = f"./results/plots/{meta['file']}_timeseries.png"
+    plt.savefig(output_path, dpi=150, bbox_inches='tight')
+    print(f"  Saved time series plot to {output_path}")
+    plt.close()
+
 '''
 for plotting
 '''
-def plot_sct(df):
-    pass
+def plot_throughput_boxplot(df, meta):
+    """
+    Create box plot of throughput by class for a given scenario
+    WITHOUT showing outlier points
+    """
+    # Calculate throughput for each flow
+    bytes_vals = df["bytes"].values.astype(float)
+    sct_vals = df["sct_ms"].values.astype(float)
+    valid_mask = sct_vals > 0
+    
+    df_plot = df[valid_mask].copy()
+    df_plot["throughput"] = df_plot["bytes"].astype(float) / df_plot["sct_ms"].astype(float)
+    
+    # Create figure
+    fig, ax = plt.subplots(figsize=(10, 6))
+    
+    # Get unique classes and create box plot WITHOUT outliers
+    classes = sorted(df_plot["class"].unique())
+    data_by_class = [df_plot[df_plot["class"] == c]["throughput"].values for c in classes]
+    
+    # showfliers=False removes the outlier points
+    bp = ax.boxplot(data_by_class, labels=classes, patch_artist=True, showfliers=False)
+    
+    # Customize colors
+    for patch in bp['boxes']:
+        patch.set_facecolor('lightblue')
+        patch.set_alpha(0.7)
+    
+    # Labels and title
+    title_parts = []
+    if meta["scenario"]:
+        title_parts.append(f"Scenario: {meta['scenario']}")
+    if meta["scheduler"]:
+        title_parts.append(f"Scheduler: {meta['scheduler']}")
+    if meta["quantum0"] is not None:
+        title_parts.append(f"Quantum: {meta['quantum0']}-{meta['quantum1']}-{meta['quantum2']}")
+    
+    ax.set_title("\n".join(title_parts), fontsize=12)
+    ax.set_xlabel("Flow Class", fontsize=11)
+    ax.set_ylabel("Throughput (bytes/ms)", fontsize=11)
+    ax.grid(True, alpha=0.3, axis='y')
+    
+    plt.tight_layout()
+    
+    # Save figure
+    os.makedirs("./results/plots", exist_ok=True)
+    output_path = f"./results/plots/{meta['file']}_boxplot.png"
+    plt.savefig(output_path, dpi=150, bbox_inches='tight')
+    print(f"  Saved plot to {output_path}")
+    plt.close()
+
+def plot_throughput_timeseries(df, meta):
+    """
+    Create time series plot of throughput over time for each class
+    Removes outliers from visualization using IQR method
+    """
+    # Calculate throughput for each flow
+    bytes_vals = df["bytes"].values.astype(float)
+    sct_vals = df["sct_ms"].values.astype(float)
+    time_vals = df["time_ms"].values.astype(float)
+    valid_mask = sct_vals > 0
+    
+    df_plot = df[valid_mask].copy()
+    df_plot["throughput"] = df_plot["bytes"].astype(float) / df_plot["sct_ms"].astype(float)
+    
+    # Create figure
+    fig, ax = plt.subplots(figsize=(12, 6))
+    
+    # Plot each class with different colors
+    classes = sorted(df_plot["class"].unique())
+    colors = {'short': '#FF6B6B', 'medium': '#4ECDC4', 'long': '#45B7D1'}
+    
+    for class_name in classes:
+        class_data = df_plot[df_plot["class"] == class_name].sort_values("time_ms").copy()
+        
+        # Remove outliers using IQR method for plotting only
+        Q1 = class_data["throughput"].quantile(0.25)
+        Q3 = class_data["throughput"].quantile(0.75)
+        IQR = Q3 - Q1
+        lower_bound = Q1 - 1.5 * IQR
+        upper_bound = Q3 + 1.5 * IQR
+        
+        # Filter out outliers for plotting only
+        class_data_filtered = class_data[
+            (class_data["throughput"] >= lower_bound) & 
+            (class_data["throughput"] <= upper_bound)
+        ]
+        
+        color = colors.get(class_name, '#95A5A6')
+        ax.scatter(class_data_filtered["time_ms"], class_data_filtered["throughput"], 
+                  label=class_name, alpha=0.6, s=20, color=color)
+    
+    # Labels and title
+    title_parts = []
+    if meta["scenario"]:
+        title_parts.append(f"Scenario: {meta['scenario']}")
+    if meta["scheduler"]:
+        title_parts.append(f"Scheduler: {meta['scheduler']}")
+    if meta["quantum0"] is not None:
+        title_parts.append(f"Quantum: {meta['quantum0']}-{meta['quantum1']}-{meta['quantum2']}")
+    
+    ax.set_title("\n".join(title_parts), fontsize=12)
+    ax.set_xlabel("Time (ms)", fontsize=11)
+    ax.set_ylabel("Throughput (bytes/ms)", fontsize=11)
+    ax.legend(loc='best')
+    ax.grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    
+    # Save figure
+    os.makedirs("./results/plots", exist_ok=True)
+    output_path = f"./results/plots/{meta['file']}_timeseries.png"
+    plt.savefig(output_path, dpi=150, bbox_inches='tight')
+    print(f"  Saved time series plot to {output_path}")
+    plt.close()
 
 def main():
 
@@ -149,6 +328,8 @@ def main():
         meta = parse_filename(f)
         df = pd.read_csv(f, sep=',')
         print_sct_stats(df)
+        plot_throughput_boxplot(df, meta)
+        plot_throughput_timeseries(df, meta)
     
 if __name__ == "__main__":
     main()
