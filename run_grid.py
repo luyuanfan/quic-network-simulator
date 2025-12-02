@@ -23,7 +23,7 @@ QUANTUMS = [
 
 ''' network configurations '''
 # stream attributes
-NFLOWS = 500
+NFLOWS = 1000
 SLRATIO = 0.9
 SHORT_SIZE = 100 * 1024 # 100KB 
 LONG_SIZE = 1 * 1024 * 1024 # 1MB
@@ -133,14 +133,19 @@ def main():
     )
 
     parser.add_argument("scenario")
+    parser.add_argument("--scheduler", "-s", type=str, default="drr")
     args = parser.parse_args()
 
     scenario = args.scenario
+    scheduler = args.scheduler
     # simple bottleneck experiments
     if scenario == "1":
-        scheduler = "drr"
-        for delay, bw, qlen, quantum in itertools.product(DELAYS, BANDWIDTHS, QUEUE_LENGTHS, QUANTUMS):
-            run_one_experiment(scenario, delay, bw, qlen, scheduler, quantum)
+        if scheduler == "drr": 
+            for delay, bw, qlen, quantum in itertools.product(DELAYS, BANDWIDTHS, QUEUE_LENGTHS, QUANTUMS):
+                run_one_experiment(scenario, delay, bw, qlen, scheduler, quantum)
+        else:
+            for delay, bw, qlen in itertools.product(DELAYS, BANDWIDTHS, QUEUE_LENGTHS):
+                run_one_experiment(scenario, delay, bw, qlen, scheduler)
 
     # datacenter experiments
     elif scenario == "2":
