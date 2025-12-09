@@ -17,13 +17,13 @@ SCHEDULERS = [
 ]
 # drr quantums
 QUANTUMS = [
-    (6 * 1200, 3 * 1200, 1 * 1200),
-    (3 * 1200, 2 * 1200, 1 * 1200)
+    (64 * 1200, 8 * 1200, 1 * 1200),
+    # (3 * 1200, 2 * 1200, 1 * 1200)
 ]
 
 ''' network configurations '''
 # stream attributes
-NFLOWS = 1000
+NFLOWS = 200
 SLRATIO = 0.9
 SHORT_SIZE = 100 * 1024 # 100KB 
 LONG_SIZE = 1 * 1024 * 1024 # 1MB
@@ -37,8 +37,7 @@ BANDWIDTHS = [
 ]
 # length of switch queue (unit: number of packet)
 QUEUE_LENGTHS = [
-    "20",
-    "50"
+    "5"
 ]
 
 ''' run one docker compose experiment '''
@@ -92,7 +91,8 @@ def run_one_experiment(scenario, delay, bw, qlen, scheduler, quantum=None):
         f"-shortFrac {SLRATIO} "
         f"-shortSize {SHORT_SIZE} "
         f"-longSize {LONG_SIZE} "
-        f"-scheduler {scheduler}"
+        f"-scheduler {scheduler} "
+        f"-concurrency {60}"
     )
     if scheduler == "drr":
         q0, q1, q2 = quantum

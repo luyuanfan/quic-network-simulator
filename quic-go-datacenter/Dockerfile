@@ -20,7 +20,6 @@ RUN git clone https://github.com/Nianqing-Gao/quic-go_scheduler.git . && \
     cd ../datacenter_server && \
     go build -o /usr/local/bin/datacenter_server
 
-
 # copy run script and run it
 COPY run_endpoint.sh .
 RUN chmod +x run_endpoint.sh

@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import skew as sp_skew, kurtosis as sp_kurtosis, gaussian_kde
 
-LOG_DIR = "../csv"
+LOG_DIR = "../logs/server/"
 OUT_SUMMARY = "./results/summary_by_class.csv"
 
 # TODO: maybe compute what quantum gives the lowest sct for short
