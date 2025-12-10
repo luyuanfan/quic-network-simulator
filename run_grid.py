@@ -17,16 +17,23 @@ SCHEDULERS = [
 ]
 # drr quantums
 QUANTUMS = [
-    (64 * 1200, 8 * 1200, 1 * 1200),
+    (1 * 1200, 8 * 1200, 128 * 1200),
+    (1 * 1200, 8 * 1200, 64 * 1200),
+    (1 * 1200, 8 * 1200, 32 * 1200),
     # (3 * 1200, 2 * 1200, 1 * 1200)
 ]
 
 ''' network configurations '''
 # stream attributes
-NFLOWS = 200
+NFLOWS = 300
 SLRATIO = 0.9
 SHORT_SIZE = 100 * 1024 # 100KB 
 LONG_SIZE = 1 * 1024 * 1024 # 1MB
+CONCURRENCY = [
+    "20",
+    "40",
+    "60"
+]
 # link delay (unit: ms)
 DELAYS = [
     "20"
@@ -37,11 +44,12 @@ BANDWIDTHS = [
 ]
 # length of switch queue (unit: number of packet)
 QUEUE_LENGTHS = [
-    "5"
+    "5",
+    "20",    
 ]
 
 ''' run one docker compose experiment '''
-def run_one_experiment(scenario, delay, bw, qlen, scheduler, quantum=None):
+def run_one_experiment(scenario, delay, bw, qlen, scheduler, con, quantum=None):
 
     if scheduler == "drr" and quantum is None:
         raise ValueError("quantum is not defined when scheduler is DRR")
@@ -58,7 +66,7 @@ def run_one_experiment(scenario, delay, bw, qlen, scheduler, quantum=None):
         quantum_tag = f"_q{q0}-{q1}-{q2}"
     
     experiment_name = (
-        f"sc-{scenario}_d{delay}_bw{bw}_ql{qlen}_sch-{scheduler}{quantum_tag}"
+        f"sc-{scenario}_d{delay}_bw{bw}_ql{qlen}_sch-{scheduler}{quantum_tag}_con{con}"
     )
     logfile = f"{experiment_name}.csv"
 
@@ -92,7 +100,7 @@ def run_one_experiment(scenario, delay, bw, qlen, scheduler, quantum=None):
         f"-shortSize {SHORT_SIZE} "
         f"-longSize {LONG_SIZE} "
         f"-scheduler {scheduler} "
-        f"-concurrency {60}"
+        f"-concurrency {con}"
     )
     if scheduler == "drr":
         q0, q1, q2 = quantum
@@ -141,11 +149,11 @@ def main():
     # simple bottleneck experiments
     if scenario == "1":
         if scheduler == "drr": 
-            for delay, bw, qlen, quantum in itertools.product(DELAYS, BANDWIDTHS, QUEUE_LENGTHS, QUANTUMS):
-                run_one_experiment(scenario, delay, bw, qlen, scheduler, quantum)
+            for delay, bw, qlen, quantum, con in itertools.product(DELAYS, BANDWIDTHS, QUEUE_LENGTHS, QUANTUMS, CONCURRENCY):
+                run_one_experiment(scenario, delay, bw, qlen, scheduler, con, quantum)
         else:
-            for delay, bw, qlen in itertools.product(DELAYS, BANDWIDTHS, QUEUE_LENGTHS):
-                run_one_experiment(scenario, delay, bw, qlen, scheduler)
+            for delay, bw, qlen, con in itertools.product(DELAYS, BANDWIDTHS, QUEUE_LENGTHS, CONCURRENCY):
+                run_one_experiment(scenario, delay, bw, qlen, scheduler, con)
 
     # datacenter experiments
     elif scenario == "2":

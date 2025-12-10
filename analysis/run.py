@@ -29,6 +29,7 @@ def parse_filename(path):
         "quantum0": None,
         "quantum1": None,
         "quantum2": None,
+        "concurrency": None, 
         "file": name,
     }
 
@@ -49,6 +50,8 @@ def parse_filename(path):
                 meta["quantum0"] = int(nums[0])
                 meta["quantum1"] = int(nums[1])
                 meta["quantum2"] = int(nums[2])
+        elif p.startswith("con"):
+            meta["concurrency"] = int(p[3:])
 
     return meta
 
