@@ -8,23 +8,6 @@ from scipy.stats import skew as sp_skew, kurtosis as sp_kurtosis, gaussian_kde
 LOG_DIR = "../logs/server/"
 OUT_SUMMARY = "./results/summary_by_class.csv"
 
-# TODO: maybe compute what quantum gives the lowest sct for short
-# streams across all possible scenarios?
-
-# TODO: not sure if we care about sct for long streams? 
-
-# TODO: maybe we can plot the sct as a distribution and see if they
-# shapes funny (long tail types of situations)
-
-# TODO: CDF of stream completion time (per class, per scenario)
-
-# TODO: Boxplot / violin plot by class and scheduler
-
-# TODO: for each quantum combo, get sct across different scenarios
-
-# TODO: maybe we care about 99 percentile of short flow sct or something like that
-#   since if we have a long tail maybe some are dragging the mean down
-
 # maybe an overall score: score= w1â€‹â‹…mean_short â€‹+ w2â€‹â‹…p99_short â€‹+ w3â€‹â‹…skew_short
 
 def parse_filename(path):
@@ -103,6 +86,57 @@ def compute_moments(class_name, group):
         "skew": sk,
         "kurtosis": kt,
     })
+
+'''box plot for stream completion time'''
+def plot_sct_boxplot(df, meta, log_y=True):
+
+    df_plot = df[df["sct_ms"] > 0].copy()
+    df_plot["fct_ms"] = df_plot["sct_ms"].astype(float)
+
+    # prepare data for each class
+    classes = sorted(df_plot["class"].unique())
+    data_by_class = [
+        df_plot[df_plot["class"] == c]["fct_ms"].values for c in classes
+    ]
+
+    # plot
+    fig, ax = plt.subplots(figsize=(10, 6))
+    bp = ax.boxplot(
+        data_by_class,
+        labels=classes,
+        patch_artist=True,
+        showfliers=False
+    )
+
+    # style
+    for patch in bp["boxes"]:
+        patch.set_facecolor("lightblue")
+        patch.set_alpha(0.7)
+
+    title_parts = []
+    if meta.get("scenario"):
+        title_parts.append(f"Scenario: {meta['scenario']}")
+    if meta.get("scheduler"):
+        title_parts.append(f"Scheduler: {meta['scheduler']}")
+    if meta.get("quantum0") is not None:
+        title_parts.append(
+            f"Quantum: {meta['quantum0']}-{meta['quantum1']}-{meta['quantum2']}"
+        )
+
+    ax.set_title("\n".join(title_parts), fontsize=12)
+    ax.set_xlabel("Stream Length Class", fontsize=11)
+    ax.set_ylabel("Stream completion time (ms)", fontsize=11)
+    ax.grid(True, alpha=0.3, axis="y")
+
+    if log_y:
+        ax.set_yscale("log")
+
+    plt.tight_layout()
+    os.makedirs("./results/plots", exist_ok=True)
+    out_path = f"./results/plots/{meta['file']}_sct_boxplot.png"
+    plt.savefig(out_path, dpi=150, bbox_inches="tight")
+    print(f"  Saved SCT boxplot to {out_path}")
+    plt.close()
 
 '''
 get stream completion time by class (stream length) for one scenario
@@ -375,6 +409,7 @@ def main():
         plot_throughput_boxplot(df, meta)
         plot_throughput_ridgeline(df, meta)
         plot_throughput_timeseries(df, meta)
+        plot_sct_boxplot(df, meta)
     
 if __name__ == "__main__":
     main()
