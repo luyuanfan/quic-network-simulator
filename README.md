@@ -1,26 +1,27 @@
 # Network Simulator for QUIC benchmarking
 
-**tl;dr:**
-
-to run the experiments:
+## Quick start
+To run the experiments and generate all data, do:
 ```bash
-# optionally do the following to update quic-go source code
-sudo docker compose build --no-cache
-# then run
+git clone git@github.com:luyuanfan/quic-network-simulator.git
+sudo docker compose build
 sudo python3 run_grid.py
 ```
 
-to do data analysis, go to `./analysis/` and
+To do data analysis, go to `./analysis/` and: 
 ```bash
+python3 -m venv analysis-env
 source analysis-env/bin/activate
 pip install -r requirements.txt
 python3 run.py
 ```
+All graphs will be placed in `./analysis/results`.
 
 ---
 
-## where things are
-This is the ns-3 experimental framework of our QUIC deficit round robin
+## Our framework and repositories
+
+This is the ns-3 experimental framework for testing our QUIC deficit round robin
 scheduler. 
 
 The source code of our scheduler is located in another repository:
@@ -34,36 +35,63 @@ The source code of our scheduler is located in another repository:
 
 In this repository, we have these files:
 
+- `run_grid.py` which generates all raw data through a grid search for all parameters of interest. 
 - `analysis/` where we have all of our data analysis scripts
-- `sim/datacenter/` which implements a simple leaf-spine network
-- `docker-compose.yml` which sets up three containers that runs the network,
-   the client, and the server code. 
-- `.env` which contains all configurations of the network, client, and server.
-   It is passed to the docker compose file that use these parameters to build 
-   the entire experiment. 
+- `sim/datacenter/` which implements a leaf-spine network.
+- `sim/simple-p2p/` which implements a simple point-to-point bottleneck network. 
+- `docker-compose.yml` which sets up three containers that runs the network, the client, and the server code. 
 
 ---
 
-## set up
+## Data Generation
 
-To set up the experiment framework, do: 
+To run experiments with different scheduler (default is DRR), do:
 ```bash
-git clone git@github.com:luyuanfan/quic-network-simulator.git
-sudo docker compose up
+sudo python3 run_grid.py --sched drr
+```
+> Options include: wfq (weighted fair queue), abs (absolute priority), rr (round robin)
+
+To configure the topology, do:
+```bash
+sudo python3 run_grid.py --topo b
+```
+> Options include: b (simple point to point bottleneck), d (datacenter)
+
+Results are placed in  `./logs/server`
+
+---
+
+## Data Analysis 
+
+**Important**: all following operations should happen in the analysis folder for cleanliness. 
+
+We use python for data analysis. To set up the virtual environment, go to the `analysis/` and do: 
+```bash
+python3 -m venv analysis-env
+source analysis-env/bin/activate
+pip install -r requirements.txt
 ```
 
-## what does the docker file do
+then we can run the main analyzer code by doing
+```bash
+python3 run.py
+```
 
-**important** because we need to pull from the source code repo,
+---
+
+
+## About the Docker Compose project
+
+**Important**: Since we need to pull from the source code repo,
 remember to always run a `sudo docker compose build --no-cache` after
 making some changes to the source code so that the docker container also
-has up to date info. 
+has updated info. 
 
-this framework runs a real quic client and a real quic server inside two 
-separate docker containers. it forces the traffic to go through ns-3 which
+This framework runs a real quic client and a real quic server inside two 
+separate docker containers. It forces the traffic to go through ns-3 which
 emulates our desired datacenter network conditions. 
 
-we have three containers:
+We have three containers:
 
 1. sim
    - runs ns-3, listens on port 57832
@@ -77,68 +105,11 @@ we have three containers:
    - run drr server library
    - connected to rightnet
 
-all parameters for the experiments is written in `.env` which is then used in the 
-docker compose file. 
-
-about `SERVER_PARAMS` and `CLIENT_PARAMS`, if nothing is defined it'll default to 
-the values in our quic-go source code. 
-
-about `SCENARIO`, it defines the network. more examples can be found in the `sim/scenarios`
-folder, each accompanied by all parameters needed.
-
-**important** if any source code is changed we can try to rebuild all the docker layers by doing 
-`sudo docker compose build --no-cache` just to make sure things are up to date. 
+All parameters defining the experiments are listed on the top of `run_grid.py`,
+which by default should do a grid search across all possible parameter combinations. 
 
 ---
 
-## generating data
-
-for simple bottleneck:
-```bash
-sudo python3 run_grid.py 1
-```
-for datacenter:
-```bash
-sudo python3 run_grid.py 2
-```
-results are placed in  `./logs/sim/`
-
----
-
-## data analysis 
-
-**important** all following operations should happen in the analysis folder for cleanliness. 
-
-we use python for data analysis, and we want a python env for the libraries. 
-
-to set up the env, go to the `analysis` folder and do: 
-```bash
-python3 -m venv analysis-env
-source analysis-env/bin/activate
-pip install -r requirements.txt
-```
-
-then we can run the main analyzer code by doing
-```bash
-python3 run.py
-```
-
-get in and out of the environemt by doing
-```bash
-source analysis-env/bin/activate  # get in 
-deactivate                        # get out
-```
----
-
-## network topology
-
-about the leaf-spine datacenter topology, i added a new scenario here `sim/scenarios/datacenter`.
-
-to use this, we need to stop using the `martenseemann/quic-network-simulator` sim image in the docker compose file. instead, we can build our own local sim image. i already changed the image name in the compose file, so doing a first-time compose up should do it. but if you have cached layers somewhere, you can build this local image by doing: 
-```bash
-sudo docker compose build sim
-```
----
 
 This project builds a test framework that can be used for benchmarking and
 measuring the performance of QUIC implementations under various network

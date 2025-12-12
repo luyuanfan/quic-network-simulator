@@ -49,15 +49,15 @@ QUEUE_LENGTHS = [
 ]
 
 ''' run one docker compose experiment '''
-def run_one_experiment(scenario, delay, bw, qlen, scheduler, con, quantum=None):
+def run_one_experiment(scenario, delay, bw, qlen, scheduler, con, dtype, quantum=None):
 
     if scheduler == "drr" and quantum is None:
         raise ValueError("quantum is not defined when scheduler is DRR")
 
     # process parameters for file naming
-    if scenario == "1":
+    if scenario == "b":
         scenario = "simple-p2p"
-    elif scenario == "2":
+    elif scenario == "d":
         scenario = "datacenter"
 
     quantum_tag = ""
@@ -100,7 +100,8 @@ def run_one_experiment(scenario, delay, bw, qlen, scheduler, con, quantum=None):
         f"-shortSize {SHORT_SIZE} "
         f"-longSize {LONG_SIZE} "
         f"-scheduler {scheduler} "
-        f"-concurrency {con}"
+        f"-concurrency {con} "
+        f"-dataType {dtype}"
     )
     if scheduler == "drr":
         q0, q1, q2 = quantum
@@ -136,30 +137,27 @@ def main():
 
     parser = argparse.ArgumentParser(
         description="usage help:\n"
-        " 'run_grid.py 1' for simple bottleneck experiments\n"
-        " 'run_grid.py 2' for datacenter experiments"
+        " 'run_grid.py --topo b' for simple bottleneck experiments\n"
+        " 'run_grid.py --topo d' for datacenter experiments\n"
+        " 'run_grid.py --sched drr' for schedulers (drr, wfq, abs, rr)\n"
+        " 'run_grid.py --dtype threePoints' for synthetic data sample method ('threePoints' or 'logUniform')"
     )
 
-    parser.add_argument("scenario")
-    parser.add_argument("--scheduler", "-s", type=str, default="drr")
+    parser.add_argument("--topo", "-t", type=str, default="b")
+    parser.add_argument("--sched", "-s", type=str, default="drr")
+    parser.add_argument("--dtype", "-d", type=str, default="threePoints")
     args = parser.parse_args()
 
-    scenario = args.scenario
-    scheduler = args.scheduler
-    # simple bottleneck experiments
-    if scenario == "1":
-        if scheduler == "drr": 
-            for delay, bw, qlen, quantum, con in itertools.product(DELAYS, BANDWIDTHS, QUEUE_LENGTHS, QUANTUMS, CONCURRENCY):
-                run_one_experiment(scenario, delay, bw, qlen, scheduler, con, quantum)
-        else:
-            for delay, bw, qlen, con in itertools.product(DELAYS, BANDWIDTHS, QUEUE_LENGTHS, CONCURRENCY):
-                run_one_experiment(scenario, delay, bw, qlen, scheduler, con)
+    scenario = args.topo
+    scheduler = args.sched
+    dtype = args.dtype
 
-    # datacenter experiments
-    elif scenario == "2":
-        pass
+    if scheduler == "drr": 
+        for delay, bw, qlen, quantum, con in itertools.product(DELAYS, BANDWIDTHS, QUEUE_LENGTHS, QUANTUMS, CONCURRENCY):
+            run_one_experiment(scenario, delay, bw, qlen, scheduler, con, dtype, quantum)
     else:
-        print("error: invalid scenario")
+        for delay, bw, qlen, con in itertools.product(DELAYS, BANDWIDTHS, QUEUE_LENGTHS, CONCURRENCY):
+            run_one_experiment(scenario, delay, bw, qlen, scheduler, con, dtype)
 
 if __name__ == "__main__":
     main()
