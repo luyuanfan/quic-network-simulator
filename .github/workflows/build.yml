@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest  # x86_64 - no architecture issues!
+    runs-on: ubuntu-latest
     
     steps:
       - name: Checkout code
@@ -35,15 +35,15 @@ jobs:
           CLIENT_PARAMS: ""
         run: |
           docker compose up -d
-          sleep 30
+          sleep 60
           docker compose logs
           docker compose down
-      - name: Upload CSV results
-         if: always()
-         uses: actions/upload-artifact@v3
-         with:
-           name: simulation-results
-           path: |
-             **/*.csv
-             logs/
-           retention-days: 90
+      
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: simulation-results
+          path: |
+            **/*.csv
+            logs/
