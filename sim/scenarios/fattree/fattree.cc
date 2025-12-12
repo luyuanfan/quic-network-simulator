@@ -16,6 +16,8 @@ Amit Khandu Bhalerao		17 December 2016
 #include "ns3/ipv4-global-routing-helper.h"
 #include "ns3/flow-monitor-helper.h"
 
+#include "../helper/quic-network-simulator-helper.h"
+#include "../helper/quic-point-to-point-helper.h"
 
 using namespace ns3;
 using namespace std;
@@ -26,6 +28,10 @@ int main(int argc, char *argv[])
 {
 	CommandLine cmd;
 	bool ECMProuting = true;
+    cmd.AddValue("delay", "base delay for some links (e.g. 50ns)", delay);
+    cmd.AddValue("bandwidth", "base bandwidth for links (e.g. 40Gbps)", bandwidth);
+    cmd.AddValue("coreQueue", "core switch queue size in packets", coreQueue);
+    cmd.AddValue("leafQueue", "leaf switch queue size in packets", leafQueue);
 	cmd.AddValue ("ECMProuting", "ECMP routing (To enable type 'true') ", ECMProuting);
 	cmd.Parse (argc, argv);
 	  
