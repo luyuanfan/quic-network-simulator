@@ -48,7 +48,7 @@ QUEUE_LENGTHS = [
 ]
 
 ''' run one docker compose experiment '''
-def run_one_experiment(scenario, delay, bw, qlen, scheduler, con, dtype, quantum=None):
+def run_one_experiment(scenario, delay, bw, qlen, scheduler, con, dtype, count, quantum=None):
 
     if scheduler == "drr" and quantum is None:
         raise ValueError("quantum is not defined when scheduler is DRR")
@@ -115,15 +115,18 @@ def run_one_experiment(scenario, delay, bw, qlen, scheduler, con, dtype, quantum
 
     subprocess.run(["docker-compose", "down", "-v"], check=False, env=env)
 
-    # subprocess.run(
-    #     ["docker-compose", "build", "--no-cache", "client"],
-    #     env=env,
-    # )
+    if count == 1: 
+        subprocess.run(
+            ["docker-compose", "build", "--no-cache", "client"],
+            env=env,
+        )
 
-    # subprocess.run(
-    #     ["docker-compose", "build", "--no-cache", "server"],
-    #     env=env,
-    # )
+        subprocess.run(
+            ["docker-compose", "build", "--no-cache", "server"],
+            env=env,
+        )
+
+    print(f"[SIMULATOR] Running experiment {count}")
 
     subprocess.run(
         ["docker-compose", "up", "--abort-on-container-exit"],
@@ -151,12 +154,16 @@ def main():
     scheduler = args.sched
     dtype = args.dtype
 
-    if scheduler == "drr": 
+    exp_counter = 0
+    
+    if scheduler == "drr": # if scheduler is DRR, add quanta to grid
         for delay, bw, qlen, quantum, con in itertools.product(DELAYS, BANDWIDTHS, QUEUE_LENGTHS, QUANTUMS, CONCURRENCY):
-            run_one_experiment(scenario, delay, bw, qlen, scheduler, con, dtype, quantum)
-    else:
+            exp_counter += 1
+            run_one_experiment(scenario, delay, bw, qlen, scheduler, con, dtype, exp_counter, quantum)
+    else: # otherwise use only network parameters 
         for delay, bw, qlen, con in itertools.product(DELAYS, BANDWIDTHS, QUEUE_LENGTHS, CONCURRENCY):
-            run_one_experiment(scenario, delay, bw, qlen, scheduler, con, dtype)
+            exp_counter += 1
+            run_one_experiment(scenario, delay, bw, qlen, scheduler, con, dtype, exp_counter)
 
 if __name__ == "__main__":
     main()
