@@ -80,36 +80,6 @@ python3 run.py
 ---
 
 
-## About the Docker Compose project
-
-**Important**: Since we need to pull from the source code repo,
-remember to always run a `sudo docker compose build --no-cache` after
-making some changes to the source code so that the docker container also
-has updated info. 
-
-This framework runs a real quic client and a real quic server inside two 
-separate docker containers. It forces the traffic to go through ns-3 which
-emulates our desired datacenter network conditions. 
-
-We have three containers:
-
-1. sim
-   - runs ns-3, listens on port 57832
-   - bridges client and server
-
-2. client
-   - run drr client library
-   - connected to leftnet
-
-3. server
-   - run drr server library
-   - connected to rightnet
-
-All parameters defining the experiments are listed on the top of `run_grid.py`,
-which by default should do a grid search across all possible parameter combinations. 
-
----
-
 
 This project builds a test framework that can be used for benchmarking and
 measuring the performance of QUIC implementations under various network

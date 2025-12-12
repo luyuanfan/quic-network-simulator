@@ -30,7 +30,6 @@ SLRATIO = 0.9
 SHORT_SIZE = 100 * 1024 # 100KB 
 LONG_SIZE = 1 * 1024 * 1024 # 1MB
 CONCURRENCY = [
-    "20",
     "40",
     "60"
 ]
