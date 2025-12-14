@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import skew as sp_skew, kurtosis as sp_kurtosis, gaussian_kde
 
-LOG_DIR = "../data/drr_threepoints_data"
+LOG_DIR = "../data/wfq_threepoints_data"
 OUT_SUMMARY = "./results/summary_by_class.csv"
 
 # maybe an overall score: score= w1â€‹â‹…mean_short â€‹+ w2â€‹â‹…p99_short â€‹+ w3â€‹â‹…skew_short
