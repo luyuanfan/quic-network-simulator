@@ -5,14 +5,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import skew as sp_skew, kurtosis as sp_kurtosis, gaussian_kde
 
-LOG_DIR = "../logs/server/"
+LOG_DIR = "../data/drr_threepoints_data"
 OUT_SUMMARY = "./results/summary_by_class.csv"
 
 # maybe an overall score: score= w1â€‹â‹…mean_short â€‹+ w2â€‹â‹…p99_short â€‹+ w3â€‹â‹…skew_short
 
 def parse_filename(path):
     '''
-    example filename: sc-simple-p2p_d20_bw10_ql20_sch-drr_q7200-3600-1200.csv
+    example filename: sc-simple-p2p_d20_bw10_ql20_sch-drr_q7200-3600-1200_con10.csv
     '''
     name = os.path.basename(path)
     if name.endswith(".csv"):
@@ -284,6 +284,66 @@ def plot_throughput_timeseries(df, meta):
     print(f"  Saved time series plot to {output_path}")
     plt.close()
 
+def plot_e2e_bar(df, meta):
+    """
+    Create bar graph showing mean e2e_ms for each class
+    """
+    # Filter valid e2e_ms values
+    df_plot = df[df["e2e_ms"] > 0].copy()
+    
+    if len(df_plot) == 0:
+        print(f"  No valid e2e_ms data for bar plot")
+        return
+    
+    # Calculate mean e2e_ms by class
+    classes = sorted(df_plot["class"].unique())
+    means = []
+    
+    for class_name in classes:
+        class_data = df_plot[df_plot["class"] == class_name]["e2e_ms"].astype(float)
+        means.append(class_data.mean())
+    
+    # Create figure
+    fig, ax = plt.subplots(figsize=(10, 6))
+    
+    # Define colors for each class
+    colors_map = {'short': '#FF6B6B', 'medium': '#4ECDC4', 'long': '#45B7D1'}
+    colors = [colors_map.get(c, '#95A5A6') for c in classes]
+    
+    # Create bar plot
+    bars = ax.bar(classes, means, width=0.3, color=colors, alpha=0.7, edgecolor='black', linewidth=1.2)
+    
+    # Add value labels on top of bars
+    for bar, mean_val in zip(bars, means):
+        height = bar.get_height()
+        ax.text(bar.get_x() + bar.get_width()/2., height,
+                f'{mean_val:.2f}',
+                ha='center', va='bottom', fontsize=10)
+    
+    # Labels and title
+    title_parts = []
+    if meta["scenario"]:
+        title_parts.append(f"Scenario: {meta['scenario']}")
+    if meta["scheduler"]:
+        title_parts.append(f"Scheduler: {meta['scheduler']}")
+    if meta["quantum0"] is not None:
+        title_parts.append(f"Quantum: {meta['quantum0']}-{meta['quantum1']}-{meta['quantum2']}")
+    title_parts.append("Mean End-to-End Time by Class")
+    
+    ax.set_title("\n".join(title_parts), fontsize=12)
+    ax.set_xlabel("Flow Class", fontsize=11)
+    ax.set_ylabel("Mean E2E Time (ms)", fontsize=11)
+    ax.grid(True, alpha=0.3, axis='y')
+    
+    plt.tight_layout()
+    
+    # Save figure
+    os.makedirs("./results/plots", exist_ok=True)
+    output_path = f"./results/plots/{meta['file']}_e2e_bar.png"
+    plt.savefig(output_path, dpi=150, bbox_inches='tight')
+    print(f"  Saved E2E bar plot to {output_path}")
+    plt.close()
+
 def plot_throughput_ridgeline(df, meta):
     """
     Create ridgeline plot showing throughput distributions for each class
@@ -413,6 +473,7 @@ def main():
         plot_throughput_ridgeline(df, meta)
         plot_throughput_timeseries(df, meta)
         plot_sct_boxplot(df, meta)
+        plot_e2e_bar(df, meta)
     
 if __name__ == "__main__":
     main()
