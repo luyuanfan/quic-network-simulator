@@ -17,21 +17,19 @@ SCHEDULERS = [
 ]
 # drr quantums
 QUANTUMS = [
-    (1 * 1200, 8 * 1200, 128 * 1200),
-    (1 * 1200, 8 * 1200, 64 * 1200),
-    (1 * 1200, 8 * 1200, 32 * 1200),
-    # (3 * 1200, 2 * 1200, 1 * 1200)
+    (3 * 1200, 2 * 1200, 1 * 1200),
+    (2 * 1200, 1 * 1200, 1 * 1200)
 ]
 
 ''' network configurations '''
 # stream attributes
-NFLOWS = 300
+NFLOWS = 200
 SLRATIO = 0.9
 SHORT_SIZE = 100 * 1024 # 100KB 
 LONG_SIZE = 1 * 1024 * 1024 # 1MB
 CONCURRENCY = [
-    "40",
-    "60"
+    "10",
+    "30"
 ]
 # link delay (unit: ms)
 DELAYS = [
