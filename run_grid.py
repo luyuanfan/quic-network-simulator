@@ -128,7 +128,7 @@ def run_one_experiment(scenario, delay, bw, qlen, scheduler, con, dtype, count, 
     print(f"[SIMULATOR] Running experiment {count}")
 
     subprocess.run(
-        ["docker-compose", "up", "--abort-on-container-exit"],
+        ["docker", "compose", "up", "--abort-on-container-exit"],
         check=True,
         env=env,
     )
