@@ -1,8 +1,7 @@
 services:
   sim:
     build: ./sim
-    # image: martenseemann/quic-network-simulator
-    image: quic-network-simulator-local
+    image: quic-network-simulator-sim
     container_name: sim
     hostname: sim
     stdin_open: true
@@ -24,8 +23,8 @@ services:
         ipv6_address: fd00:cafe:cafe:100::2
 
   server:
-    build: ./$SERVER
-    image: $SERVER
+    build: ./quic-go-datacenter
+    image: quic-go-datacenter
     container_name: server
     hostname: server
     stdin_open: true
@@ -50,8 +49,8 @@ services:
       - "client46:fd00:cafe:cafe:0::100"
 
   client:
-    build: ./$CLIENT
-    image: $CLIENT
+    build: ./quic-go-datacenter
+    image: quic-go-datacenter
     container_name: client
     hostname: client
     stdin_open: true

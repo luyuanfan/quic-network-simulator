@@ -111,18 +111,19 @@ def run_one_experiment(scenario, delay, bw, qlen, scheduler, con, dtype, count, 
     env["SERVER_PARAMS"] = ns3_server_params
     env["CLIENT_PARAMS"] = ns3_client_params
 
-    subprocess.run(["docker-compose", "down", "-v"], check=False, env=env)
+    if count != 1:
+        subprocess.run(["docker-compose", "down", "-v"], check=False, env=env)
 
-    if count == 1: 
-        subprocess.run(
-            ["docker-compose", "build", "--no-cache", "client"],
-            env=env,
-        )
+    # if count == 1: 
+    #     subprocess.run(
+    #         ["docker-compose", "build", "--no-cache", "client"],
+    #         env=env,
+    #     )
 
-        subprocess.run(
-            ["docker-compose", "build", "--no-cache", "server"],
-            env=env,
-        )
+    #     subprocess.run(
+    #         ["docker-compose", "build", "--no-cache", "server"],
+    #         env=env,
+    #     )
 
     print(f"[SIMULATOR] Running experiment {count}")
 

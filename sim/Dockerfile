@@ -24,7 +24,7 @@ RUN patch -d scratch < CMakeLists.patch
 COPY scenarios scratch/
 
 # compile all the scenarios
-RUN ./ns3 build
+RUN ./ns3 build -j $(nproc)
 
 # strip ns3 version prefix from scratches
 RUN find out/scratch -name "ns${NS_VERS}-*" | \

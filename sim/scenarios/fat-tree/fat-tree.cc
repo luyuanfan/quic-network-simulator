@@ -51,16 +51,16 @@ int main(int argc, char *argv[])
 	uint32_t leafQSize = queuePkts;
 	uint32_t uplinkQSize = queuePkts * 2;
 
-	TrafficControlHelper tchLeaf;
-	TrafficControlHelper tchUplink;
+	// TrafficControlHelper tchLeaf;
+	// TrafficControlHelper tchUplink;
 
-	// leaf queues (host ↔ edge, and the special endhost links)
-	tchLeaf.SetRootQueueDisc("ns3::PfifoFastQueueDisc", "MaxSize",
-													StringValue(std::to_string(leafQSize) + "p"));
+	// // leaf queues (host ↔ edge, and the special endhost links)
+	// tchLeaf.SetRootQueueDisc("ns3::PfifoFastQueueDisc", "MaxSize",
+	// 												StringValue(std::to_string(leafQSize) + "p"));
 
-	// uplink queues (edge ↔ aggr, aggr ↔ core)
-	tchUplink.SetRootQueueDisc("ns3::PfifoFastQueueDisc", "MaxSize",
-														StringValue(std::to_string(uplinkQSize) + "p"));
+	// // uplink queues (edge ↔ aggr, aggr ↔ core)
+	// tchUplink.SetRootQueueDisc("ns3::PfifoFastQueueDisc", "MaxSize",
+	// 													StringValue(std::to_string(uplinkQSize) + "p"));
 
 	
 	LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_INFO);
